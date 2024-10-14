@@ -1,9 +1,9 @@
-import { Request } from 'express';
+import { Session, SessionData } from 'express-session';
 
 declare global {
   namespace Express {
     interface Request {
-      session: SessionData;
+      session: Session & Partial<SessionData>;
     }
   }
 }
