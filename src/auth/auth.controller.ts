@@ -16,11 +16,11 @@ export class AuthController {
   constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
 
   @Get('callback')
-  @Redirect(process.env.FRONTEND_BASE_URL as string)
+  // @Redirect(process.env.FRONTEND_BASE_URL as string)
   async callbackAction(
     @Query() query: Record<string, string>,
     @Session() session: Record<string, any>,
-    // @Res() res: Response,
+    @Res() res: Response,
   ) {
     const { credentials, identityId } = await getCredentials(query.token);
 
@@ -32,15 +32,8 @@ export class AuthController {
 
     session.userId = identityId;
 
-    // res.redirect(process.env.FRONTEND_BASE_URL as string);
+    res.redirect(process.env.FRONTEND_BASE_URL as string);
   }
-
-  //   @Get('callback')
-  // // @Redirect(process.env.FRONTEND_BASE_URL as string)
-  // async callback(@Res() res: Response) {
-  //   console.log('Redirected...' + process.env.FRONTEND_BASE_URL);
-  //   res.redirect(process.env.FRONTEND_BASE_URL as string);
-  // }
 
   @Get('auth')
   index() {

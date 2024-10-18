@@ -6,15 +6,14 @@ import {
 
 export const getCredentials = async (identityToken: string) => {
   const cognitoIdentityClient = new CognitoIdentityClient({
-    region: 'eu-north-1',
+    region: process.env.AWS_REGION as string,
   });
 
   // Get the identity ID
   const getIdCommand = new GetIdCommand({
-    IdentityPoolId: 'eu-north-1:163257d1-b8f4-4fbd-88e1-7edf6d07d7d7',
+    IdentityPoolId: process.env.AWS_IDENTITY_POOL_ID as string,
     Logins: {
-      'cognito-idp.eu-north-1.amazonaws.com/eu-north-1_Vvg0QXGcW':
-        identityToken,
+      [process.env.AWS_USER_POOL_ID as string]: identityToken,
     },
   });
 
@@ -25,8 +24,7 @@ export const getCredentials = async (identityToken: string) => {
   const getCredentialsCommand = new GetCredentialsForIdentityCommand({
     IdentityId: identityId,
     Logins: {
-      'cognito-idp.eu-north-1.amazonaws.com/eu-north-1_Vvg0QXGcW':
-        identityToken,
+      [process.env.AWS_USER_POOL_ID as string]: identityToken,
     },
   });
 
