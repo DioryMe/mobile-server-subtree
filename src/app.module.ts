@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { redisClientFactory } from './redisClientFactory';
 import { ConfigModule } from '@nestjs/config';
+import { AuthController } from './auth/auth.controller';
 
 @Module({
   imports: [
@@ -9,12 +10,12 @@ import { ConfigModule } from '@nestjs/config';
       envFilePath: ['.env', '.env.local'],
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, AuthController],
   providers: [
-    // {
-    //   provide: 'REDIS_CLIENT',
-    //   useValue: redisClientFactory(),
-    // },
+    {
+      provide: 'REDIS_CLIENT',
+      useValue: redisClientFactory(),
+    },
   ],
 })
 export class AppModule {}
