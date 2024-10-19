@@ -1,3 +1,5 @@
+import { constructAndLoadRoom } from '@diograph/diograph';
+import { S3Client } from '@diograph/s3-client';
 import { Controller, Get, Session } from '@nestjs/common';
 import { SessionData } from 'express-session';
 
@@ -12,7 +14,7 @@ export class RoomsController {
       await this.getNativeConfig(session);
 
     const credentialsWithRegion = {
-      region: 'eu-west-1',
+      region: process.env.AWS_REGION,
       credentials,
       // {
       //   accessKeyId: credentials.accessKeyId,
@@ -21,23 +23,23 @@ export class RoomsController {
       // },
     };
 
-    // const clients = {
-    //   S3Client: {
-    //     clientConstructor: S3Client,
-    //     credentials: credentialsWithRegion,
-    //   },
-    // };
+    const clients = {
+      S3Client: {
+        clientConstructor: S3Client,
+        credentials: credentialsWithRegion,
+      },
+    };
 
-    // const room = await constructAndLoadRoom(address, clientType, clients);
+    const room = await constructAndLoadRoom(address, clientType, clients);
 
+    // return '123';
+    return room.diograph.diograph;
     // res.status(200).send(room.diograph.diograph);
-
-    return '123';
   }
 
   getNativeConfig = (session: SessionData) => {
     return {
-      address: `s3://${process.env.AWS_BUCKET}/${session.identityId}`,
+      address: `s3://${process.env.AWS_BUCKET}/users/${session.identityId}/`,
       clientType: 'S3Client',
       credentials: JSON.parse(session.awsCredentials),
     };
