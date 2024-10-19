@@ -17,6 +17,11 @@ export class AppController {
     return session.userId;
   }
 
+  @Get('identity-id')
+  async identityId(@Session() session: Record<string, string>) {
+    return session.identityId;
+  }
+
   @Get('test-list-s3')
   async testListAction(@Session() session: Record<string, string>) {
     const options = {
@@ -28,7 +33,7 @@ export class AppController {
 
     const listCommand = new ListObjectsV2Command({
       Bucket: 'diory-mobile-proto',
-      Prefix: `${session.userId}`,
+      Prefix: `users/${session.identityId}/`,
     });
 
     const list = await s3Client.send(listCommand);
@@ -47,7 +52,7 @@ export class AppController {
 
     const command = new GetObjectCommand({
       Bucket: 'diory-mobile-proto',
-      Key: `${session.userId}/package.json`,
+      Key: `users/${session.identityId}/package.json`,
     });
 
     const response = await s3Client.send(command);
