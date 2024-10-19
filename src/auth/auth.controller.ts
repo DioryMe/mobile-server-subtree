@@ -10,6 +10,21 @@ import {
 import Redis from 'ioredis';
 import { Response } from 'express';
 import { getCredentials } from './auth.service';
+import jwt from 'jsonwebtoken';
+
+interface JwtPayload {
+  sub: string;
+  aud: string;
+  iss: string;
+  auth_time: number;
+  exp: number;
+  iat: number;
+  jti: string;
+  email: string;
+  'cognito:username': string;
+  email_verified: boolean;
+  token_use: string;
+}
 
 @Controller()
 export class AuthController {
@@ -22,7 +37,11 @@ export class AuthController {
     @Session() session: Record<string, any>,
     @Res() res: Response,
   ) {
-    const { credentials, identityId } = await getCredentials(query.token);
+    const jwtToken = query.token;
+
+    // This is done prior to anything else as it acts as "token verification"
+    // => throws error if JWT if not from AWS Cognito or is not valid and prevents session creation
+    const { credentials, identityId } = await getCredentials(jwtToken);
 
     session.awsCredentials = JSON.stringify({
       accessKeyId: credentials.AccessKeyId,
@@ -30,7 +49,12 @@ export class AuthController {
       sessionToken: credentials.SessionToken,
     });
 
-    session.userId = identityId;
+    session.identityId = identityId;
+
+    const { sub, email } = jwt.decode(jwtToken) as JwtPayload;
+
+    session.userId = sub;
+    session.email = email;
 
     res.redirect(process.env.FRONTEND_BASE_URL as string);
   }

@@ -2,6 +2,8 @@ import 'express-session';
 
 declare module 'express-session' {
   interface SessionData {
-    userId: string; // or any other properties you expect in your session
+    userId: string; // sub or cognito:username
+    email: string; // user email
+    identityId: string; // AWS cognito identity id of the identity pool
   }
 }
