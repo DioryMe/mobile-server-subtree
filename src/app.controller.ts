@@ -4,8 +4,13 @@ import { Controller, Get, Session } from '@nestjs/common';
 @Controller()
 export class AppController {
   @Get()
-  index() {
+  async index() {
     return 'This is index!!!!!!!!!!"';
+  }
+
+  @Get('user-id')
+  async userId(@Session() session: Record<string, string>) {
+    return session.userId;
   }
 
   @Get('test-s3')
@@ -19,7 +24,7 @@ export class AppController {
 
     const listCommand = new ListObjectsV2Command({
       Bucket: 'diory-mobile-proto',
-      Prefix: '',
+      Prefix: session.userId,
     });
 
     const list = await s3Client.send(listCommand);
