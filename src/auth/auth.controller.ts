@@ -11,6 +11,7 @@ import Redis from 'ioredis';
 import { Response } from 'express';
 import { getCredentials } from './auth.service';
 import jwt from 'jsonwebtoken';
+import { SessionData } from 'express-session';
 
 interface JwtPayload {
   sub: string;
@@ -34,7 +35,7 @@ export class AuthController {
   // @Redirect(process.env.FRONTEND_BASE_URL as string)
   async callbackAction(
     @Query() query: Record<string, string>,
-    @Session() session: Record<string, any>,
+    @Session() session: SessionData,
     @Res() res: Response,
   ) {
     const jwtToken = query.token;

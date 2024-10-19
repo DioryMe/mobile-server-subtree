@@ -32,7 +32,7 @@ export class AppController {
     const s3Client = new S3Client(options);
 
     const listCommand = new ListObjectsV2Command({
-      Bucket: 'diory-mobile-proto',
+      Bucket: process.env.AWS_BUCKET,
       Prefix: `users/${session.identityId}/`,
     });
 
@@ -51,7 +51,7 @@ export class AppController {
     const s3Client = new S3Client(options);
 
     const command = new GetObjectCommand({
-      Bucket: 'diory-mobile-proto',
+      Bucket: process.env.AWS_BUCKET,
       Key: `users/${session.identityId}/package.json`,
     });
 
