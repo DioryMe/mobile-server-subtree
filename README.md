@@ -16,6 +16,10 @@ yarn start:dev
 
 ## Endpoints
 
+Diograph:
+
+http://localhost:3000/room/diograph
+
 Content:
 
 http://localhost:3000/room/content?cid=bafkreifhhmoftoo26lc223k5riwflm6uvgrizwakg5z7n7yruj7gty27ji&mime=video/mp4

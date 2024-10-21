@@ -7,21 +7,13 @@ import { Response } from 'express';
 @Controller('room')
 export class RoomsController {
   @Get('diograph')
-  async getRoomDiograph(
-    // @Res() res: Response,
-    @Session() session: SessionData,
-  ) {
+  async getRoomDiograph(@Session() session: SessionData) {
     const { address, clientType, credentials } =
       await this.getNativeConfig(session);
 
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
       credentials,
-      // {
-      //   accessKeyId: credentials.accessKeyId,
-      //   secretAccessKey: credentials.secretAccessKey,
-      //   sessionToken: credentials.sessionToken,
-      // },
     };
 
     const clients = {
@@ -33,9 +25,7 @@ export class RoomsController {
 
     const room = await constructAndLoadRoom(address, clientType, clients);
 
-    // return '123';
     return room.diograph.diograph;
-    // res.status(200).send(room.diograph.diograph);
   }
 
   @Get('content')
@@ -50,11 +40,6 @@ export class RoomsController {
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
       credentials,
-      // {
-      //   accessKeyId: credentials.accessKeyId,
-      //   secretAccessKey: credentials.secretAccessKey,
-      //   sessionToken: credentials.sessionToken,
-      // },
     };
 
     const clients = {
@@ -85,11 +70,6 @@ export class RoomsController {
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
       credentials,
-      // {
-      //   accessKeyId: credentials.accessKeyId,
-      //   secretAccessKey: credentials.secretAccessKey,
-      //   sessionToken: credentials.sessionToken,
-      // },
     };
 
     const clients = {
