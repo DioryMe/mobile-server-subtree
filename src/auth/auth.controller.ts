@@ -3,8 +3,8 @@ import Redis from 'ioredis';
 import { Response } from 'express';
 import { getCredentials } from './auth.service';
 import jwt from 'jsonwebtoken';
-import { SessionData } from '../@types/express';
 import { CognitoIdToken } from '../@types/cognito-id-token';
+import { SessionData } from '../@types/session-data';
 
 @Controller()
 export class AuthController {

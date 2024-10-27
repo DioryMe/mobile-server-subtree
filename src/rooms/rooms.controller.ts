@@ -2,14 +2,25 @@ import { constructAndLoadRoom } from '@diograph/diograph';
 import { S3Client } from '@diograph/s3-client';
 import { Controller, Get, Query, Res, Session } from '@nestjs/common';
 import { Response } from 'express';
-import { SessionData } from '../@types/express';
+import { retrieveAwsCredentials } from '../auth/auth.service';
+import { SessionData } from '../@types/session-data';
 
 @Controller('room')
 export class RoomsController {
   @Get('diograph')
   async getRoomDiograph(@Session() session: SessionData) {
-    const { address, clientType, credentials } =
-      await this.getNativeConfig(session);
+    if (!session.identityToken) {
+      throw new Error('No identity token provided!');
+    }
+
+    if (!session.awsCredentials || !session.identityId) {
+      await retrieveAwsCredentials(session.identityToken, session);
+    }
+
+    const { address, clientType, credentials } = await this.getNativeConfig(
+      session.identityId,
+      session.awsCredentials,
+    );
 
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
@@ -34,8 +45,18 @@ export class RoomsController {
     @Query() query: Record<string, string>,
     @Session() session: SessionData,
   ) {
-    const { address, clientType, credentials } =
-      await this.getNativeConfig(session);
+    if (!session.identityToken) {
+      throw new Error('No identity token provided!');
+    }
+
+    if (!session.awsCredentials || !session.identityId) {
+      await retrieveAwsCredentials(session.identityToken, session);
+    }
+
+    const { address, clientType, credentials } = await this.getNativeConfig(
+      session.identityId,
+      session.awsCredentials,
+    );
 
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
@@ -64,8 +85,18 @@ export class RoomsController {
     @Query() query: Record<string, string>,
     @Session() session: SessionData,
   ) {
-    const { address, clientType, credentials } =
-      await this.getNativeConfig(session);
+    if (!session.identityToken) {
+      throw new Error('No identity token provided!');
+    }
+
+    if (!session.awsCredentials || !session.identityId) {
+      await retrieveAwsCredentials(session.identityToken, session);
+    }
+
+    const { address, clientType, credentials } = await this.getNativeConfig(
+      session.identityId,
+      session.awsCredentials,
+    );
 
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
@@ -88,11 +119,11 @@ export class RoomsController {
     res.status(200).header('Content-Type', 'text/html').send(html);
   }
 
-  getNativeConfig = (session: SessionData) => {
+  getNativeConfig = (identityId?: string, awsCredentials?: string) => {
     return {
-      address: `s3://${process.env.AWS_BUCKET}/users/${session.identityId}`,
+      address: `s3://${process.env.AWS_BUCKET}/users/${identityId}`,
       clientType: 'S3Client',
-      credentials: JSON.parse(session.awsCredentials),
+      credentials: awsCredentials && JSON.parse(awsCredentials),
     };
   };
 }

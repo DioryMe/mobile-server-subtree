@@ -3,6 +3,22 @@ import {
   GetIdCommand,
   GetCredentialsForIdentityCommand,
 } from '@aws-sdk/client-cognito-identity';
+import { SessionData } from '../@types/session-data';
+
+export const retrieveAwsCredentials = async (
+  identityToken: string,
+  session: SessionData,
+) => {
+  const { credentials, identityId } = await getCredentials(identityToken);
+
+  session.awsCredentials = JSON.stringify({
+    accessKeyId: credentials.AccessKeyId,
+    secretAccessKey: credentials.SecretKey,
+    sessionToken: credentials.SessionToken,
+  });
+
+  session.identityId = identityId;
+};
 
 export const getCredentials = async (identityToken: string) => {
   const cognitoIdentityClient = new CognitoIdentityClient({

@@ -8,38 +8,53 @@ import * as jwt from 'jsonwebtoken';
 import { RequestWithSession } from '../@types/express';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import jwkToPem, { JWK } from 'jwk-to-pem';
+import { CognitoAccessToken } from '../@types/cognito-access-token';
 
 @Injectable()
 export class CognitoAuthMiddleware implements NestMiddleware {
   constructor(private readonly httpService: HttpService) {}
 
-  private userPoolId = process.env.AWS_USER_POOL_ID;
-  private region = process.env.AWS_REGION;
-  private jwksUrl = `https://cognito-idp.${this.region}.amazonaws.com/${this.userPoolId}/.well-known/jwks.json`;
-
-  private cachedKeys: { [key: string]: string } = {};
+  private jwksUrl = `https://${process.env.AWS_USER_POOL_ID}/.well-known/jwks.json`;
+  private cachedKeys: { [key: string]: JWK } = {};
 
   async use(req: RequestWithSession, res: Response, next: NextFunction) {
-    const token = this.extractToken(req);
+    const accessToken = this.extractAccessToken(req);
+    const identityToken = this.extractIdentityToken(req);
 
-    if (!token) {
+    if (!accessToken) {
       throw new UnauthorizedException('No authorization token provided');
     }
 
     try {
-      // TODO: Save only chosen attributes from Cognito token to session object
-      const decodedToken = await this.verifyToken(token);
-      req.session = decodedToken; // Attach decoded token to the request
+      const { sub, username }: CognitoAccessToken =
+        await this.verifyToken(accessToken);
+
+      req.session = {
+        userId: sub,
+        email: username,
+        accessToken,
+        identityToken,
+      };
+
       next();
     } catch (error) {
       throw new UnauthorizedException('Invalid authorization token');
     }
   }
 
-  private extractToken(req: RequestWithSession): string | null {
+  private extractAccessToken(req: RequestWithSession): string | null {
     const authHeader: any = (req.headers as any)['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.slice(7, authHeader.length);
+    }
+    return null;
+  }
+
+  private extractIdentityToken(req: RequestWithSession): string | null {
+    const idTokenHeader: any = (req.headers as any)['x-id-token'];
+    if (idTokenHeader) {
+      return idTokenHeader;
     }
     return null;
   }
@@ -48,26 +63,24 @@ export class CognitoAuthMiddleware implements NestMiddleware {
     if (Object.keys(this.cachedKeys).length) {
       return this.cachedKeys;
     }
-    // TODO: Use HttpModule here if possible
     const response: any = await firstValueFrom(
       this.httpService.get(this.jwksUrl),
     );
-    const keys = response.data.keys;
-    keys.forEach((key: any) => {
-      this.cachedKeys[key.kid] = 'jwt.algorithms.RS256';
+    response.data.keys.forEach((key: any) => {
+      this.cachedKeys[key.kid] = key;
     });
     return this.cachedKeys;
   }
 
   private async verifyToken(token: string): Promise<any> {
-    const decodedHeader: any = jwt.decode(token, { complete: true });
+    const decodedHeader = jwt.decode(token, { complete: true });
     const jwks = await this.getJWKs();
-    const publicKey = jwks[decodedHeader.header.kid];
+    const publicKey = jwks[decodedHeader?.header.kid as string];
 
     if (!publicKey) {
       throw new Error('Invalid public key');
     }
 
-    return jwt.verify(token, publicKey, { algorithms: ['RS256'] });
+    return jwt.verify(token, jwkToPem(publicKey), { algorithms: ['RS256'] });
   }
 }

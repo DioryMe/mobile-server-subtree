@@ -26,8 +26,6 @@ import { HttpModule } from '@nestjs/axios';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(CognitoAuthMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
+    consumer.apply(CognitoAuthMiddleware).forRoutes('*');
   }
 }
