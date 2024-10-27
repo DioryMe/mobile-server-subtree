@@ -1,3 +1,4 @@
+/*
 import { Controller, Get, Inject, Req, Session } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
@@ -30,3 +31,4 @@ export class ThrowawayController {
     });
   }
 }
+*/

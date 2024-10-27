@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { redisClientFactory } from './redisClientFactory';
 import { ConfigModule } from '@nestjs/config';
 import { AuthController } from './auth/auth.controller';
 import { RoomsController } from './rooms/rooms.controller';
+import { CognitoAuthMiddleware } from './middleware/cognito-auth.middleware';
 
 @Module({
   imports: [
@@ -19,4 +20,10 @@ import { RoomsController } from './rooms/rooms.controller';
     },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(CognitoAuthMiddleware)
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+  }
+}

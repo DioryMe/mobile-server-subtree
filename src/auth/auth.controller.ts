@@ -1,17 +1,9 @@
-import {
-  Controller,
-  Get,
-  Inject,
-  Query,
-  Redirect,
-  Res,
-  Session,
-} from '@nestjs/common';
+import { Controller, Get, Inject, Query, Res, Session } from '@nestjs/common';
 import Redis from 'ioredis';
 import { Response } from 'express';
 import { getCredentials } from './auth.service';
 import jwt from 'jsonwebtoken';
-import { SessionData } from 'express-session';
+import { SessionData } from '../@types/express';
 
 interface JwtPayload {
   sub: string;

@@ -1,8 +1,8 @@
 import { constructAndLoadRoom } from '@diograph/diograph';
 import { S3Client } from '@diograph/s3-client';
 import { Controller, Get, Query, Res, Session } from '@nestjs/common';
-import { SessionData } from 'express-session';
 import { Response } from 'express';
+import { SessionData } from '../@types/express';
 
 @Controller('room')
 export class RoomsController {
