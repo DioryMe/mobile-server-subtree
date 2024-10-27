@@ -4,20 +4,7 @@ import { Response } from 'express';
 import { getCredentials } from './auth.service';
 import jwt from 'jsonwebtoken';
 import { SessionData } from '../@types/express';
-
-interface JwtPayload {
-  sub: string;
-  aud: string;
-  iss: string;
-  auth_time: number;
-  exp: number;
-  iat: number;
-  jti: string;
-  email: string;
-  'cognito:username': string;
-  email_verified: boolean;
-  token_use: string;
-}
+import { CognitoIdToken } from '../@types/cognito-id-token';
 
 @Controller()
 export class AuthController {
@@ -44,7 +31,7 @@ export class AuthController {
 
     session.identityId = identityId;
 
-    const { sub, email } = jwt.decode(jwtToken) as JwtPayload;
+    const { sub, email } = jwt.decode(jwtToken) as CognitoIdToken;
 
     session.userId = sub;
     session.email = email;

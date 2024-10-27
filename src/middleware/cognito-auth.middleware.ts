@@ -6,11 +6,14 @@ import {
 import { NextFunction, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { RequestWithSession } from '../@types/express';
-import { HttpModule as axios } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class CognitoAuthMiddleware implements NestMiddleware {
-  private userPoolId = process.env.COGNITO_USER_POOL_ID;
+  constructor(private readonly httpService: HttpService) {}
+
+  private userPoolId = process.env.AWS_USER_POOL_ID;
   private region = process.env.AWS_REGION;
   private jwksUrl = `https://cognito-idp.${this.region}.amazonaws.com/${this.userPoolId}/.well-known/jwks.json`;
 
@@ -24,6 +27,7 @@ export class CognitoAuthMiddleware implements NestMiddleware {
     }
 
     try {
+      // TODO: Save only chosen attributes from Cognito token to session object
       const decodedToken = await this.verifyToken(token);
       req.session = decodedToken; // Attach decoded token to the request
       next();
@@ -33,7 +37,7 @@ export class CognitoAuthMiddleware implements NestMiddleware {
   }
 
   private extractToken(req: RequestWithSession): string | null {
-    const authHeader = req.headers.get('authorization');
+    const authHeader: any = (req.headers as any)['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       return authHeader.slice(7, authHeader.length);
     }
@@ -44,8 +48,11 @@ export class CognitoAuthMiddleware implements NestMiddleware {
     if (Object.keys(this.cachedKeys).length) {
       return this.cachedKeys;
     }
-    const { data } = await axios.get(this.jwksUrl);
-    const keys = data.keys;
+    // TODO: Use HttpModule here if possible
+    const response: any = await firstValueFrom(
+      this.httpService.get(this.jwksUrl),
+    );
+    const keys = response.data.keys;
     keys.forEach((key: any) => {
       this.cachedKeys[key.kid] = 'jwt.algorithms.RS256';
     });
