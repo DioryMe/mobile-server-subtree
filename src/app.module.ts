@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { redisClientFactory } from './redisClientFactory';
 import { ConfigModule } from '@nestjs/config';
@@ -26,6 +26,6 @@ import { HttpModule } from '@nestjs/axios';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CognitoAuthMiddleware).forRoutes('*');
+    consumer.apply(CognitoAuthMiddleware).exclude('callback').forRoutes('*');
   }
 }
