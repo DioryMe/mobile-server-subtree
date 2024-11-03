@@ -7,7 +7,6 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [process.env.FRONTEND_BASE_URL as string],
-    credentials: true,
   });
   app.useGlobalFilters(new AllExceptionsFilter());
 
