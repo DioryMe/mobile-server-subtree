@@ -10,6 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import jwkToPem, { JWK } from 'jwk-to-pem';
 import { CognitoAccessToken } from '../@types/cognito-access-token';
+import { retrieveAwsCredentials } from '../auth/auth.service';
 
 @Injectable()
 export class CognitoAuthMiddleware implements NestMiddleware {
@@ -19,14 +20,18 @@ export class CognitoAuthMiddleware implements NestMiddleware {
   private cachedKeys: { [key: string]: JWK } = {};
 
   async use(req: RequestWithSession, res: Response, next: NextFunction) {
+    // Get tokens from request headers
     const accessToken = this.extractAccessToken(req);
     const identityToken = this.extractIdentityToken(req);
 
-    if (!accessToken) {
-      throw new UnauthorizedException('No authorization token provided');
+    if (!identityToken || !accessToken) {
+      throw new UnauthorizedException(
+        'No authorization token or identity token provided',
+      );
     }
 
     try {
+      // Verify access token
       const { sub, username }: CognitoAccessToken =
         await this.verifyToken(accessToken);
 
@@ -36,6 +41,11 @@ export class CognitoAuthMiddleware implements NestMiddleware {
         accessToken,
         identityToken,
       };
+
+      // Retrieve AWS credentials
+      if (!req.session.awsCredentials || !req.session.identityId) {
+        await retrieveAwsCredentials(identityToken, req.session);
+      }
 
       next();
     } catch (error) {
