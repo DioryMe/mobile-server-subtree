@@ -6,6 +6,7 @@ import { AuthController } from './auth/auth.controller';
 import { RoomsController } from './rooms/rooms.controller';
 import { CognitoAuthMiddleware } from './middleware/cognito-auth.middleware';
 import { HttpModule } from '@nestjs/axios';
+import { StaticRoomsController } from './rooms/static-rooms.controller';
 
 @Module({
   imports: [
@@ -16,7 +17,12 @@ import { HttpModule } from '@nestjs/axios';
       timeout: 5000,
     }),
   ],
-  controllers: [AppController, AuthController, RoomsController],
+  controllers: [
+    AppController,
+    AuthController,
+    RoomsController,
+    StaticRoomsController,
+  ],
   providers: [
     {
       provide: 'REDIS_CLIENT',
@@ -28,7 +34,7 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(CognitoAuthMiddleware)
-      .exclude('callback', 'room/list')
+      .exclude('callback', 'static-rooms/thumbnail', 'static-rooms/list')
       .forRoutes('*');
   }
 }
