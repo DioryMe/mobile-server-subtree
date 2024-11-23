@@ -1,86 +1,10 @@
 import { constructAndLoadRoom } from '@diograph/diograph';
 import { LocalClient } from '@diograph/local-client';
-import { Controller, Get, Query, Res, Session } from '@nestjs/common';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import { Response } from 'express';
-import { retrieveAwsCredentials } from '../auth/auth.service';
-import { SessionData } from '../@types/session-data';
 
-@Controller('static-rooms')
+@Controller('static-room')
 export class StaticRoomsController {
-  /*
-  @Get('diograph')
-  async getRoomDiograph(@Session() session: SessionData) {
-    if (!session.identityToken) {
-      throw new Error('No identity token provided!');
-    }
-
-    if (!session.awsCredentials || !session.identityId) {
-      await retrieveAwsCredentials(session.identityToken, session);
-    }
-
-    const { address, clientType, credentials } = await this.getNativeConfig(
-      session.identityId,
-      session.awsCredentials,
-    );
-
-    const credentialsWithRegion = {
-      region: process.env.AWS_REGION,
-      credentials,
-    };
-
-    const clients = {
-      S3Client: {
-        clientConstructor: S3Client,
-        credentials: credentialsWithRegion,
-      },
-    };
-
-    const room = await constructAndLoadRoom(address, clientType, clients);
-
-    return room.diograph.diograph;
-  }
-
-  @Get('content')
-  async readContentAction(
-    @Res() res: Response,
-    @Query() query: Record<string, string>,
-    @Session() session: SessionData,
-  ) {
-    if (!session.identityToken) {
-      throw new Error('No identity token provided!');
-    }
-
-    if (!session.awsCredentials || !session.identityId) {
-      await retrieveAwsCredentials(session.identityToken, session);
-    }
-
-    const { address, clientType, credentials } = await this.getNativeConfig(
-      session.identityId,
-      session.awsCredentials,
-    );
-
-    const credentialsWithRegion = {
-      region: process.env.AWS_REGION,
-      credentials,
-    };
-
-    const clients = {
-      S3Client: {
-        clientConstructor: S3Client,
-        credentials: credentialsWithRegion,
-      },
-    };
-
-    const room = await constructAndLoadRoom(address, clientType, clients);
-    const response = await room.readContent(query.cid);
-
-    res
-      .status(200)
-      .header('Content-Type', query.mime)
-      .send(Buffer.from(response));
-  }
-*/
-
   async getRoom() {
     const { address, dioryId, CID } = {
       address: `${process.cwd()}/src/static-rooms/demo-content-room`,
@@ -108,6 +32,13 @@ export class StaticRoomsController {
       dioryId,
       CID,
     };
+  }
+
+  @Get('diograph')
+  async getRoomDiograph() {
+    const { room } = await this.getRoom();
+
+    return room.diograph.diograph;
   }
 
   @Get('content')

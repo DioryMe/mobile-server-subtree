@@ -36,10 +36,10 @@ export class AppModule {
       .apply(CognitoAuthMiddleware)
       .exclude(
         'callback',
-        'static-rooms/diograph',
-        'static-rooms/list',
-        'static-rooms/thumbnail',
-        'static-rooms/content',
+        'static-room/diograph',
+        'static-room/list',
+        'static-room/thumbnail',
+        'static-room/content',
       )
       .forRoutes('*');
   }
