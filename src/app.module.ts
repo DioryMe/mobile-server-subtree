@@ -34,7 +34,13 @@ export class AppModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(CognitoAuthMiddleware)
-      .exclude('callback', 'static-rooms/thumbnail', 'static-rooms/list')
+      .exclude(
+        'callback',
+        'static-rooms/diograph',
+        'static-rooms/list',
+        'static-rooms/thumbnail',
+        'static-rooms/content',
+      )
       .forRoutes('*');
   }
 }

@@ -81,33 +81,56 @@ export class StaticRoomsController {
   }
 */
 
-  @Get('thumbnail')
-  async getThumbnailAction(@Res() res: Response) {
+  async getRoom() {
+    const { address, dioryId, CID } = {
+      address: `${process.cwd()}/src/static-rooms/demo-content-room`,
+      dioryId: '5456c2c3-4a69-4d80-bd2f-caa9945cff71',
+      CID: 'bafkreidqzn2oioyvd62dc4cxvtbuwxcq6p7v5b3ro2i5yoofpa4ouppimy',
+    };
+
+    // Not working as "dcli import folder ." doesn't create proper room.json
+    // const { address, dioryId, CID } = {
+    //   address: `${process.cwd()}/src/static-rooms/ignored`,
+    //   dioryId: '7dfbe943-4988-4d13-b47e-524cc7b97670',
+    //   CID: 'bafkreiaywgz5gwhooftrzkn4p5txswbp5df7avhdsjg4x2nnpxvct2xzve',
+    // };
+
     const clients = {
       LocalClient: {
         clientConstructor: LocalClient,
       },
     };
 
-    const room1 = await constructAndLoadRoom(
-      `${process.cwd()}/src/static-rooms/demo-content-room`,
-      'LocalClient',
-      clients,
-    );
+    const room = await constructAndLoadRoom(address, 'LocalClient', clients);
 
-    const room2 = await constructAndLoadRoom(
-      `${process.cwd()}/src/static-rooms/ignored`,
-      'LocalClient',
-      clients,
-    );
+    return {
+      room,
+      dioryId,
+      CID,
+    };
+  }
 
-    const room1DioryId = '5456c2c3-4a69-4d80-bd2f-caa9945cff71';
-    const response1 = await room1.diograph.getDiory({ id: room1DioryId });
+  @Get('content')
+  async readContentAction(
+    @Res() res: Response,
+    @Query() query: Record<string, string>,
+  ) {
+    const { room, CID } = await this.getRoom();
+    const response = await room.readContent(CID);
 
-    const room2DioryId = '7dfbe943-4988-4d13-b47e-524cc7b97670';
-    const response2 = await room2.diograph.getDiory({ id: room2DioryId });
+    res
+      .status(200)
+      .header('Content-Type', query.mime)
+      .send(Buffer.from(response));
+  }
 
-    const html = `<img src="${response2.image}">`;
+  @Get('thumbnail')
+  async getThumbnailAction(@Res() res: Response) {
+    const { room, dioryId } = await this.getRoom();
+
+    const response = await room.diograph.getDiory({ id: dioryId });
+
+    const html = `<img src="${response.image}">`;
 
     res.status(200).header('Content-Type', 'text/html').send(html);
   }
