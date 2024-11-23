@@ -119,6 +119,21 @@ export class RoomsController {
     res.status(200).header('Content-Type', 'text/html').send(html);
   }
 
+  @Get('list')
+  async getRoomListlAction() {
+    return [
+      {
+        address: 'room-1',
+        clientType: 'LocalClient',
+      },
+
+      {
+        address: 'room-2',
+        clientType: 'LocalClient',
+      },
+    ];
+  }
+
   getNativeConfig = (identityId?: string, awsCredentials?: string) => {
     return {
       address: `s3://${process.env.AWS_BUCKET}/users/${identityId}`,

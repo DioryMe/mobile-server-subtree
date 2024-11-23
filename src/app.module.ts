@@ -26,6 +26,9 @@ import { HttpModule } from '@nestjs/axios';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CognitoAuthMiddleware).exclude('callback').forRoutes('*');
+    consumer
+      .apply(CognitoAuthMiddleware)
+      .exclude('callback', 'room/list')
+      .forRoutes('*');
   }
 }
