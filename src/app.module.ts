@@ -31,7 +31,6 @@ export class AppModule {
     consumer
       .apply(CognitoAuthMiddleware)
       .exclude(
-        'callback',
         'static-room/diograph',
         'static-room/list',
         'static-room/thumbnail',
