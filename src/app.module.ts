@@ -2,11 +2,11 @@ import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { redisClientFactory } from './redisClientFactory';
 import { ConfigModule } from '@nestjs/config';
-import { AuthController } from './auth/auth.controller';
 import { RoomsController } from './rooms/rooms.controller';
 import { CognitoAuthMiddleware } from './middleware/cognito-auth.middleware';
 import { HttpModule } from '@nestjs/axios';
 import { StaticRoomsController } from './rooms/static-rooms.controller';
+import { AuthService } from './auth/auth.service';
 
 @Module({
   imports: [
@@ -17,13 +17,9 @@ import { StaticRoomsController } from './rooms/static-rooms.controller';
       timeout: 5000,
     }),
   ],
-  controllers: [
-    AppController,
-    AuthController,
-    RoomsController,
-    StaticRoomsController,
-  ],
+  controllers: [AppController, RoomsController, StaticRoomsController],
   providers: [
+    AuthService,
     {
       provide: 'REDIS_CLIENT',
       useValue: redisClientFactory(),
