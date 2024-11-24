@@ -5,13 +5,12 @@ import {
 } from '@nestjs/common';
 import { NextFunction, Response } from 'express';
 import { RequestWithSession } from '../@types/express';
-import { HttpService } from '@nestjs/axios';
 import { CognitoAccessToken } from '../@types/cognito-access-token';
-import { getCredentials, verifyToken } from '../auth/auth.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class CognitoAuthMiddleware implements NestMiddleware {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly authService: AuthService) {}
 
   async use(req: RequestWithSession, res: Response, next: NextFunction) {
     // Get tokens from request headers
@@ -26,10 +25,8 @@ export class CognitoAuthMiddleware implements NestMiddleware {
 
     try {
       // Verify access token
-      const { sub, username }: CognitoAccessToken = await verifyToken(
-        accessToken,
-        this.httpService,
-      );
+      const { sub, username }: CognitoAccessToken =
+        await this.authService.verifyToken(accessToken);
 
       req.session = {
         userId: sub,
@@ -38,9 +35,10 @@ export class CognitoAuthMiddleware implements NestMiddleware {
         identityToken,
       };
 
-      // Retrieve AWS credentials
+      // Retrieve AWS credentials and verify identity token
       if (!req.session.awsCredentials || !req.session.identityId) {
-        const { credentials, identityId } = await getCredentials(identityToken);
+        const { credentials, identityId } =
+          await this.authService.getCredentials(identityToken);
 
         req.session.awsCredentials = JSON.stringify({
           accessKeyId: credentials.AccessKeyId,
@@ -53,7 +51,9 @@ export class CognitoAuthMiddleware implements NestMiddleware {
 
       next();
     } catch (error) {
-      throw new UnauthorizedException('Invalid authorization token');
+      throw new UnauthorizedException(
+        'Invalid authorization or identity token',
+      );
     }
   }
 
