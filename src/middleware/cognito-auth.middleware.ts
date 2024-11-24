@@ -4,20 +4,14 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { NextFunction, Response } from 'express';
-import * as jwt from 'jsonwebtoken';
 import { RequestWithSession } from '../@types/express';
-import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import jwkToPem, { JWK } from 'jwk-to-pem';
 import { CognitoAccessToken } from '../@types/cognito-access-token';
-import { retrieveAwsCredentials } from '../auth/auth.service';
+import { getCredentials, verifyToken } from '../auth/auth.service';
 
 @Injectable()
 export class CognitoAuthMiddleware implements NestMiddleware {
   constructor(private readonly httpService: HttpService) {}
-
-  private jwksUrl = `https://${process.env.AWS_USER_POOL_ID}/.well-known/jwks.json`;
-  private cachedKeys: { [key: string]: JWK } = {};
 
   async use(req: RequestWithSession, res: Response, next: NextFunction) {
     // Get tokens from request headers
@@ -32,8 +26,10 @@ export class CognitoAuthMiddleware implements NestMiddleware {
 
     try {
       // Verify access token
-      const { sub, username }: CognitoAccessToken =
-        await this.verifyToken(accessToken);
+      const { sub, username }: CognitoAccessToken = await verifyToken(
+        accessToken,
+        this.httpService,
+      );
 
       req.session = {
         userId: sub,
@@ -44,7 +40,15 @@ export class CognitoAuthMiddleware implements NestMiddleware {
 
       // Retrieve AWS credentials
       if (!req.session.awsCredentials || !req.session.identityId) {
-        await retrieveAwsCredentials(identityToken, req.session);
+        const { credentials, identityId } = await getCredentials(identityToken);
+
+        req.session.awsCredentials = JSON.stringify({
+          accessKeyId: credentials.AccessKeyId,
+          secretAccessKey: credentials.SecretKey,
+          sessionToken: credentials.SessionToken,
+        });
+
+        req.session.identityId = identityId;
       }
 
       next();
@@ -67,30 +71,5 @@ export class CognitoAuthMiddleware implements NestMiddleware {
       return idTokenHeader;
     }
     return null;
-  }
-
-  private async getJWKs() {
-    if (Object.keys(this.cachedKeys).length) {
-      return this.cachedKeys;
-    }
-    const response: any = await firstValueFrom(
-      this.httpService.get(this.jwksUrl),
-    );
-    response.data.keys.forEach((key: any) => {
-      this.cachedKeys[key.kid] = key;
-    });
-    return this.cachedKeys;
-  }
-
-  private async verifyToken(token: string): Promise<any> {
-    const decodedHeader = jwt.decode(token, { complete: true });
-    const jwks = await this.getJWKs();
-    const publicKey = jwks[decodedHeader?.header.kid as string];
-
-    if (!publicKey) {
-      throw new Error('Invalid public key');
-    }
-
-    return jwt.verify(token, jwkToPem(publicKey), { algorithms: ['RS256'] });
   }
 }

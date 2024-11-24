@@ -3,21 +3,38 @@ import {
   GetIdCommand,
   GetCredentialsForIdentityCommand,
 } from '@aws-sdk/client-cognito-identity';
-import { SessionData } from '../@types/session-data';
+import { firstValueFrom } from 'rxjs';
+import jwt from 'jsonwebtoken';
+import { JWK } from 'jwk-to-pem';
+import { HttpService } from '@nestjs/axios';
 
-export const retrieveAwsCredentials = async (
-  identityToken: string,
-  session: SessionData,
-) => {
-  const { credentials, identityId } = await getCredentials(identityToken);
+const jwksUrl = `https://${process.env.AWS_USER_POOL_ID}/.well-known/jwks.json`;
+const cachedKeys: { [key: string]: JWK } = {};
 
-  session.awsCredentials = JSON.stringify({
-    accessKeyId: credentials.AccessKeyId,
-    secretAccessKey: credentials.SecretKey,
-    sessionToken: credentials.SessionToken,
+export const getJWKs = async (httpService: HttpService) => {
+  if (Object.keys(cachedKeys).length) {
+    return cachedKeys;
+  }
+  const response: any = await firstValueFrom(httpService.get(jwksUrl));
+  response.data.keys.forEach((key: any) => {
+    cachedKeys[key.kid] = key;
   });
+  return cachedKeys;
+};
 
-  session.identityId = identityId;
+export const verifyToken = async (
+  token: string,
+  httpService: HttpService,
+): Promise<any> => {
+  const decodedHeader = jwt.decode(token, { complete: true });
+  const jwks = await getJWKs(httpService);
+  const publicKey = jwks[decodedHeader?.header.kid as string];
+
+  if (!publicKey) {
+    throw new Error('Invalid public key');
+  }
+
+  return jwt.verify(token, jwkToPem(publicKey), { algorithms: ['RS256'] });
 };
 
 export const getCredentials = async (identityToken: string) => {
