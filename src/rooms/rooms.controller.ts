@@ -121,4 +121,9 @@ export class RoomsController {
 
     throw new Error('No thumbnail found');
   }
+
+  @Get('list')
+  async getListAction(@Session() session: SessionData) {
+    return this.getRoomConfig(session);
+  }
 }
