@@ -1,33 +1,53 @@
 import { constructAndLoadRoom } from '@diograph/diograph';
 import { S3Client } from '@diograph/s3-client';
-import { Controller, Get, Query, Res, Session } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, Session } from '@nestjs/common';
 import { Response } from 'express';
 import { SessionData } from '../@types/session-data';
+import { LocalClient } from '@diograph/local-client';
+import { ConnectionClientList } from '@diograph/diograph/types';
 
 @Controller('room')
 export class RoomsController {
   private async getNativeS3Room(session: SessionData) {
-    const identityId = session.identityId;
-    const awsCredentials =
-      session.awsCredentials && JSON.parse(session.awsCredentials);
-
-    const address = `s3://${process.env.AWS_BUCKET}/users/${identityId}`;
+    const address = `s3://${process.env.AWS_BUCKET}/users/${session.identityId}`;
     const clientType = 'S3Client';
-    const credentials = awsCredentials;
+    const credentials =
+      session.awsCredentials && JSON.parse(session.awsCredentials);
+    const clients = this.getClients(credentials);
 
-    const clients = await this.getClients(credentials);
     const room = await constructAndLoadRoom(address, clientType, clients);
 
     return room;
   }
 
-  private async getClients(credentials: any) {
+  private async getDemoRoom() {
+    const address = `${process.cwd()}/src/static-rooms/demo-content-room`;
+    const clientType = 'LocalClient';
+    const clients = this.getClients();
+
+    const room = await constructAndLoadRoom(address, clientType, clients);
+
+    return room;
+  }
+
+  private getClients(credentials?: any): ConnectionClientList {
+    if (!credentials) {
+      return {
+        LocalClient: {
+          clientConstructor: LocalClient,
+        },
+      };
+    }
+
     const credentialsWithRegion = {
       region: process.env.AWS_REGION,
       credentials,
     };
 
     return {
+      LocalClient: {
+        clientConstructor: LocalClient,
+      },
       S3Client: {
         clientConstructor: S3Client,
         credentials: credentialsWithRegion,
@@ -35,10 +55,22 @@ export class RoomsController {
     };
   }
 
-  @Get('diograph')
-  async getRoomDiograph(@Session() session: SessionData) {
-    const room = await this.getNativeS3Room(session);
-    return room.diograph.diograph;
+  @Get(':roomId/diograph')
+  async getRoomDiograph(
+    @Session() session: SessionData,
+    @Param('roomId') roomId: string,
+  ) {
+    if (roomId === 'native') {
+      const room = await this.getNativeS3Room(session);
+      return room.diograph.diograph;
+    }
+
+    if (roomId === 'demo') {
+      const room = await this.getDemoRoom();
+      return room.diograph.diograph;
+    }
+
+    throw new Error('Invalid roomId');
   }
 
   @Get('content')
@@ -71,14 +103,20 @@ export class RoomsController {
   }
 
   @Get('list')
-  async getRoomListAction() {
+  async getRoomListAction(@Session() session: SessionData) {
+    const identityId = session.identityId;
+
     return [
       {
-        address: 'room-1',
-        clientType: 'LocalClient',
+        id: 'Native',
+        name: 'Native',
+        address: `s3://${process.env.AWS_BUCKET}/users/${identityId}`,
+        clientType: 'S3Client',
       },
       {
-        address: 'room-2',
+        id: 'Demo',
+        name: 'Demo',
+        address: `${process.cwd()}/src/static-rooms/demo-content-room`,
         clientType: 'LocalClient',
       },
     ];
