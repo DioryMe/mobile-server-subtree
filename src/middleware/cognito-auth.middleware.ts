@@ -50,7 +50,10 @@ export class CognitoAuthMiddleware implements NestMiddleware {
       }
 
       next();
-    } catch (error) {
+    } catch (error: any) {
+      console.log(error);
+      console.log(error.message);
+      console.log(JSON.stringify(error, null, 2));
       throw new UnauthorizedException(
         'Invalid authorization or identity token',
       );
